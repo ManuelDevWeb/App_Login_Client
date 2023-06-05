@@ -1,0 +1,12 @@
+.glass {
+  @apply h-5/6 w-5/6;
+}
+
+.profileImg {
+  max-height: 160px;
+  @apply w-40 cursor-pointer;
+}
+
+.textBox {
+  @apply w-3/4;
+}
