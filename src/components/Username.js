@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 // Toaster (It's for showing notification)
 import { Toaster } from "react-hot-toast";
@@ -8,6 +8,9 @@ import { useFormik } from "formik";
 // Helpers
 import { usernameValidate } from "../helpers/validate";
 
+// Store
+import { useAuthStore } from "../store/store";
+
 // Images
 import avatar from "../assets/profile.png";
 
@@ -15,6 +18,12 @@ import avatar from "../assets/profile.png";
 import styles from "../styles/Username.module.css";
 
 export const Username = () => {
+  const navigate = useNavigate();
+
+  // Zustand
+  // useAuthStore((state) => console.log(state));
+  const { setUsername } = useAuthStore();
+
   // Formik
   const formik = useFormik({
     initialValues: {
@@ -25,9 +34,10 @@ export const Username = () => {
     validateOnBlur: false,
     validateOnChange: false,
     onSubmit: async (values) => {
-      console.log(values);
-
-      // TODO: Send the username to the server
+      // Set the username in the store
+      setUsername(values.username);
+      // Redirect to the password page
+      navigate("/password");
     },
   });
 

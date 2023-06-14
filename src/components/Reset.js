@@ -1,5 +1,3 @@
-import { Link } from "react-router-dom";
-
 // Toaster (It's for showing notification)
 import { Toaster } from "react-hot-toast";
 // Formik
