@@ -2,13 +2,14 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 
 // Toaster (It's for showing notification)
-import { Toaster } from "react-hot-toast";
+import toast, { Toaster } from "react-hot-toast";
 // Formik
 import { useFormik } from "formik";
 
 // Helpers
 import { registerValidate } from "../helpers/validate";
 import { convertToBase64 } from "../helpers/convert";
+import { registerUser } from "../helpers/helper";
 
 // Images
 import avatar from "../assets/profile.png";
@@ -32,9 +33,13 @@ export const Register = () => {
     validateOnChange: false,
     onSubmit: async (values) => {
       values = await Object.assign(values, { profile: file || "" });
-      console.log(values);
-
-      // TODO: Send the password to the server
+      // Send the data to the server
+      let registerPromise = registerUser(values);
+      toast.promise(registerPromise, {
+        loading: "Creating...",
+        success: <b>Register Successfully</b>,
+        error: <b>Registration failed</b>,
+      });
     },
   });
 

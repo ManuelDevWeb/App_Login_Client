@@ -1,14 +1,18 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 // Toaster (It's for showing notification)
-import { Toaster } from "react-hot-toast";
+import toast, { Toaster } from "react-hot-toast";
 // Formik
 import { useFormik } from "formik";
+
+// Custom Hooks
+import { useFetch } from "../hooks/fetch.hook";
 
 // Helpers
 import { profileValidate } from "../helpers/validate";
 import { convertToBase64 } from "../helpers/convert";
+import { updateUser } from "../helpers/helper";
 
 // Images
 import avatar from "../assets/profile.png";
@@ -18,33 +22,56 @@ import styles from "../styles/Username.module.css";
 import extend from "../styles/Profile.module.css";
 
 export const Profile = () => {
+  const navigate = useNavigate();
+
   const [file, setFile] = useState("");
+
+  const [{ isLoading, apiData, serverError }] = useFetch();
 
   // Formik
   const formik = useFormik({
     initialValues: {
-      firstName: "",
-      lastName: "",
-      mobile: "",
-      email: "",
-      address: "",
+      firstName: apiData?.user?.firstName || "",
+      lastName: apiData?.user?.lastName || "",
+      mobile: apiData?.user?.mobile || "",
+      email: apiData?.user?.email || "",
+      address: apiData?.user?.address || "",
     },
+    enableReinitialize: true,
     // Only validate on submit
     validate: profileValidate,
     validateOnBlur: false,
     validateOnChange: false,
     onSubmit: async (values) => {
-      values = await Object.assign(values, { profile: file || "" });
-      console.log(values);
+      values = await Object.assign(values, {
+        profile: file || apiData?.user?.profile || "",
+      });
 
-      // TODO: Send the password to the server
+      let updatePromise = updateUser(values);
+
+      toast.promise(updatePromise, {
+        loading: "Updating...",
+        success: <b>Update Successfully...!</b>,
+        error: <b>Could not Update!</b>,
+      });
     },
   });
+
+  if (isLoading) return <h1 className="text-2xl font-bold">Loading...</h1>;
+
+  if (serverError)
+    return <h1 className="text-xl text-red-500">{serverError.message}</h1>;
 
   // Formik doesn't support file upload, so we need to create a function to handle it
   const onUpload = async (event) => {
     const base64 = await convertToBase64(event.target.files[0]);
     setFile(base64);
+  };
+
+  // Logout handled functions
+  const userLogout = () => {
+    localStorage.removeItem("token");
+    navigate("/");
   };
 
   return (
@@ -70,7 +97,7 @@ export const Profile = () => {
               <label htmlFor="profile">
                 <img
                   className={`${styles.profileImg} ${extend.profileImg}  object-cover`}
-                  src={file || avatar}
+                  src={apiData?.user?.profile || file || avatar}
                   alt="avatar"
                 />
               </label>
@@ -133,9 +160,13 @@ export const Profile = () => {
             <div className="text-center py-4">
               <span className="text-gray-500">
                 Come back later?
-                <Link className="text-red-500 pl-2" to="/">
+                <button
+                  onClick={userLogout}
+                  className="text-red-500 pl-2"
+                  to="/"
+                >
                   Logout
-                </Link>
+                </button>
               </span>
             </div>
           </form>

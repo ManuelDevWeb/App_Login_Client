@@ -1,8 +1,22 @@
 import axios from "axios";
+import jwtDecode from "jwt-decode";
 
-axios.defaults.baseURL = process.env.REACT_APP_BASE_URL;
+axios.defaults.baseURL = process.env.REACT_APP_SERVER_DOMAIN;
 
 // Make API Requests
+
+// Get username from token
+const getUsername = async () => {
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    return "Cannot find token";
+  }
+
+  let decode = await jwtDecode(token);
+
+  return decode;
+};
 
 // Authenticate function
 const authenticate = async (username) => {
@@ -31,44 +45,37 @@ const getUser = async ({ username }) => {
 
 // Register user
 const registerUser = async (payload) => {
-  try {
-    const {
-      data: { message },
-      status,
-    } = await axios.post("/api/v1/register", payload);
+  const {
+    data: { message },
+    status,
+  } = await axios.post("/api/v1/register", payload);
 
-    let { username, email } = payload;
+  let { username, email } = payload;
 
-    // Send email
-    if (status === 201) {
-      await axios.post("/api/v1/register-mail", {
-        username,
-        userEmail: email,
-        text: message,
-      });
-    }
-
-    return {
-      message,
-    };
-  } catch (error) {
-    return {
-      error: error.message,
-    };
+  // Send email
+  if (status === 201) {
+    await axios.post("/api/v1/register-mail", {
+      username,
+      userEmail: email,
+      text: message,
+    });
   }
+
+  return {
+    message,
+    status,
+  };
 };
 
 // Login user
 const verifyPassword = async ({ username, password }) => {
   try {
-    if (username) {
-      const { data } = await axios.post("/api/v1/login", {
-        username,
-        password,
-      });
+    const { data } = await axios.post("/api/v1/login", {
+      username,
+      password,
+    });
 
-      return data;
-    }
+    return data;
   } catch (error) {
     return {
       error: error.message,
@@ -79,7 +86,8 @@ const verifyPassword = async ({ username, password }) => {
 // Update user
 const updateUser = async (payload) => {
   try {
-    const token = await localStorage.getItem("token");
+    const token = localStorage.getItem("token");
+    console.log(token);
 
     const {
       data: { message },
@@ -105,27 +113,22 @@ const generateOTP = async (username) => {
     const {
       data: { code },
       status,
-    } = await axios.get(`/api/v1/generateOTP`, {
-      params: {
-        username,
-      },
-    });
+    } = await axios.get(`/api/v1/generateOTP?username=${username}`);
 
     // Send email with OTP
     if (status === 200) {
-      const {
-        data: { email },
-      } = await getUser({ username });
+      const data = await getUser({ username });
 
       await axios.post("/api/v1/register-mail", {
         username,
-        userEmail: email,
+        userEmail: data.user.email,
         text: `Your OTP is ${code}`,
         subject: "OTP for Password Reset",
       });
 
       return {
         message: "OTP sent to your email",
+        OTP: code,
       };
     }
   } catch (error) {
@@ -138,16 +141,12 @@ const generateOTP = async (username) => {
 // Verify OTP
 const verifyOTP = async ({ username, code }) => {
   try {
-    const { data, status } = await axios.get(`/api/v1/verifyOTP`, {
-      params: {
-        username,
-        code,
-      },
-    });
+    const data = await axios.get(
+      `/api/v1/verifyOTP?code=${code}&username=${username}`
+    );
 
     return {
       data,
-      status,
     };
   } catch (error) {
     return {
@@ -194,4 +193,5 @@ export {
   generateOTP,
   verifyOTP,
   resetPassword,
+  getUsername,
 };
