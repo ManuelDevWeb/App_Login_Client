@@ -158,20 +158,10 @@ const verifyOTP = async ({ username, code }) => {
 // Reset Password
 const resetPassword = async ({ username, password }) => {
   try {
-    const token = await localStorage.getItem("token");
-
-    const { data, status } = await axios.put(
-      "/api/v1/reset-password",
-      {
-        username,
-        password,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
+    const { data, status } = await axios.put("/api/v1/reset-password", {
+      username,
+      password,
+    });
 
     return {
       data,
